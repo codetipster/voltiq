@@ -1,0 +1,13 @@
+@import "tailwindcss";
+
+/* Later, you can add your theme extensions or custom classes here */
+:root {
+  --brand-blue: #2563eb;
+  --brand-gray: #f8fafc;
+}
+
+body {
+  font-family: 'Inter', sans-serif;
+  background-color: var(--brand-gray);
+  color: #111827;
+}
