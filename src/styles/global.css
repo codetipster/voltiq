@@ -1,13 +1,286 @@
 @import "tailwindcss";
+/* Themes/Style guide */
 
-/* Later, you can add your theme extensions or custom classes here */
-:root {
-  --brand-blue: #2563eb;
-  --brand-gray: #f8fafc;
+@theme {
+  /* Brand Colors */
+  --color-reonic-navy: #4a5568;
+  --color-reonic-coral: #e85d5d;
+  --color-reonic-sage: #a8d5a8;
+  --color-reonic-butter: #f4d58d;
+
+  /* Semantic Color Mappings */
+  --color-brand-primary: var(--color-reonic-navy);
+  --color-brand-secondary: var(--color-reonic-coral);
+  --color-brand-success: var(--color-reonic-sage);
+  --color-brand-warning: var(--color-reonic-butter);
+  --color-brand-danger: #ef4444;
+
+  /* Chart Colors */
+  --color-chart-primary: var(--color-reonic-coral);
+  --color-chart-secondary: var(--color-reonic-navy);
+  --color-chart-tertiary: var(--color-reonic-sage);
+  --color-chart-accent: var(--color-reonic-butter);
+  --color-chart-grid: #e5e7eb;
+
+  /* Spacing Extensions */
+  --spacing-18: 4.5rem;
+  --spacing-88: 22rem;
+  --spacing-128: 32rem;
+
+  /* Border Radius */
+  --radius-card: 0.75rem;
+
+  /* Shadows */
+  --shadow-card: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px 0 rgb(0 0 0 / 0.06);
+  --shadow-card-hover: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -1px rgb(0 0 0 / 0.06);
+  --shadow-panel: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -2px rgb(0 0 0 / 0.05);
+
+  /* Animations */
+  --animate-fade-in: fadeIn 0.3s ease-in-out;
+  --animate-slide-in-left: slideInLeft 0.3s ease-out;
+  --animate-slide-in-up: slideInUp 0.3s ease-out;
 }
 
-body {
-  font-family: 'Inter', sans-serif;
-  background-color: var(--brand-gray);
-  color: #111827;
+@layer base {
+  * {
+    @apply border-gray-200;
+  }
+
+  body {
+    @apply font-sans text-gray-900 bg-gray-50 antialiased;
+  }
+
+  /* Headings */
+  h1 {
+    @apply text-3xl font-bold tracking-tight text-reonic-navy;
+  }
+
+  h2 {
+    @apply text-2xl font-semibold tracking-tight text-reonic-navy;
+  }
+
+  h3 {
+    @apply text-xl font-semibold text-reonic-navy;
+  }
+
+  h4 {
+    @apply text-lg font-medium text-gray-800;
+  }
+}
+
+/* COMPONENT CLASSES */
+
+@layer components {
+  .card-base {
+    @apply bg-white rounded-xl border border-gray-200 transition-shadow duration-200;
+    box-shadow: var(--shadow-card);
+  }
+
+  .card-hover:hover {
+    box-shadow: var(--shadow-card-hover);
+  }
+
+  .panel {
+    @apply bg-white border-r border-gray-200;
+    box-shadow: var(--shadow-panel);
+  }
+
+  /* Form Inputs */
+  .input-base {
+    @apply w-full px-3 py-2 text-sm 
+           bg-white border border-gray-300 rounded-lg
+           focus:outline-none focus:ring-2 focus:ring-reonic-coral focus:border-transparent
+           disabled:bg-gray-100 disabled:cursor-not-allowed
+           transition-colors duration-200;
+  }
+
+  /* Slider (Range Input) */
+  .slider {
+    @apply w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer;
+    accent-color: var(--color-reonic-coral);
+  }
+
+  .slider::-webkit-slider-thumb {
+    @apply appearance-none w-4 h-4 rounded-full cursor-pointer;
+    background: var(--color-reonic-coral);
+  }
+
+  .slider::-webkit-slider-thumb:hover {
+    opacity: 0.9;
+  }
+
+  .slider::-moz-range-thumb {
+    @apply w-4 h-4 rounded-full cursor-pointer border-0;
+    background: var(--color-reonic-coral);
+  }
+
+  .slider::-moz-range-thumb:hover {
+    opacity: 0.9;
+  }
+
+  /* Buttons */
+  .btn-primary {
+    @apply px-4 py-2 bg-reonic-coral text-white font-medium rounded-lg
+           hover:opacity-90 active:opacity-80
+           focus:outline-none focus:ring-2 focus:ring-reonic-coral focus:ring-offset-2
+           disabled:opacity-50 disabled:cursor-not-allowed
+           transition-all duration-200;
+  }
+
+  .btn-secondary {
+    @apply px-4 py-2 bg-white text-reonic-navy font-medium rounded-lg
+           border border-gray-300
+           hover:bg-gray-50 active:bg-gray-100
+           focus:outline-none focus:ring-2 focus:ring-reonic-navy focus:ring-offset-2
+           transition-all duration-200;
+  }
+
+  /* Labels */
+  .label-text {
+    @apply text-sm font-medium text-gray-700;
+  }
+
+  .label-required::after {
+    content: ' *';
+    @apply text-reonic-coral;
+  }
+
+  /* Metrics */
+  .metric-value {
+    @apply text-3xl font-bold text-reonic-navy tabular-nums;
+  }
+
+  .metric-label {
+    @apply text-sm font-medium text-gray-600 uppercase tracking-wide;
+  }
+
+  .metric-unit {
+    @apply text-lg font-medium text-gray-500 ml-1;
+  }
+
+  /* Tooltip */
+  .tooltip-container {
+    @apply relative inline-flex items-center cursor-help;
+  }
+
+  .tooltip-content {
+    @apply invisible absolute z-50 px-3 py-2 
+           text-xs text-white bg-gray-900 rounded-lg shadow-lg
+           whitespace-normal max-w-xs
+           bottom-full left-1/2 -translate-x-1/2 mb-2
+           opacity-0 transition-all duration-200
+           pointer-events-none;
+  }
+
+  /* Tooltip arrow */
+  .tooltip-content::after {
+    content: '';
+    @apply absolute top-full left-1/2 -translate-x-1/2
+           border-4 border-transparent border-t-gray-900;
+  }
+
+  .tooltip-container:hover .tooltip-content {
+    @apply visible opacity-100;
+  }
+
+  /* Badges */
+  .badge {
+    @apply inline-flex items-center px-2.5 py-0.5 
+           rounded-full text-xs font-medium;
+  }
+
+  .badge-success {
+    @apply bg-brand-success/20 text-green-800;
+  }
+
+  .badge-warning {
+    @apply bg-brand-warning/20 text-yellow-800;
+  }
+
+  .badge-danger {
+    @apply bg-brand-danger/20 text-red-800;
+  }
+
+  /* Divider */
+  .divider {
+    @apply border-t border-gray-200 my-4;
+  }
+
+  /* Chart Container */
+  .chart-container {
+    @apply w-full h-64 lg:h-80;
+  }
+
+  /* Loading Spinner */
+  .spinner {
+    @apply inline-block w-5 h-5 border-2 border-gray-300 border-t-reonic-coral 
+           rounded-full animate-spin;
+  }
+}
+
+/* UTILITY CLASSES */
+
+@layer utilities {
+  /* Scrollbar Styling */
+  .scrollbar-thin::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-track {
+    @apply bg-gray-100 rounded;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    @apply bg-gray-300 rounded hover:bg-gray-400;
+  }
+
+  /* Focus Visible (Accessibility) */
+  .focus-visible-ring {
+    @apply focus-visible:outline-none focus-visible:ring-2 
+           focus-visible:ring-reonic-coral focus-visible:ring-offset-2;
+  }
+}
+
+/* ANIMATIONS */
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideInLeft {
+  from {
+    transform: translateX(-100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes slideInUp {
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@media print {
+  .no-print {
+    display: none !important;
+  }
+  
+  .card-base {
+    @apply shadow-none border;
+  }
 }
