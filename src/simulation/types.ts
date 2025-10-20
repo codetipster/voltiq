@@ -47,6 +47,8 @@ export interface SimulationMetadata {
   timestamp: string; 
   configHash: string;
   seedUsed?: string;
+  averageConcurrency?: number;
+  averagePowerKW?: number;
 }
 
 export type HourOfDay = number;
