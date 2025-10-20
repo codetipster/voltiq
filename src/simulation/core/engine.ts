@@ -80,29 +80,27 @@ export class EVChargingSimulator {
   private handleArrivals(tick: number): void {
     const hour = getHourFromTick(tick);
     const baseProbability = ARRIVAL_PROBABILITIES[hour];
-    const adjustedProbability = baseProbability * this.config.arrivalMultiplier;
+    // Convert hourly probability to per-tick probability (since 1 tick = 15 min = 0.25 hr)
+    const adjustedProbability = (baseProbability / 4) * this.config.arrivalMultiplier;
 
-    if (!this.random.happens(adjustedProbability)) {
-      return; 
+    // Check each charger individually for arrivals
+    for (const charger of this.chargers) {
+      if (charger.isOccupied) {
+        continue; 
+      }
+
+      if (!this.random.happens(adjustedProbability)) {
+        continue; 
+      }
+
+      const demandKm = this.random.sample(CHARGING_DEMANDS);
+
+      if (demandKm === 0) {
+        continue; 
+      }
+
+      this.assignCharger(charger, tick, demandKm);
     }
-
-    const demandKm = this.random.sample(CHARGING_DEMANDS);
-
-    if (demandKm === 0) {
-      return; 
-    }
-
-    const availableCharger = this.findAvailableCharger();
-    
-    if (!availableCharger) {
-      return; // All chargers busy - EV is rejected/leaves
-    }
-
-    this.assignCharger(availableCharger, tick, demandKm);
-  }
-
-  private findAvailableCharger(): ChargerState | null {
-    return this.chargers.find(c => !c.isOccupied) || null;
   }
 
   private assignCharger(
@@ -147,10 +145,10 @@ export class EVChargingSimulator {
         
         // Calculate exact energy consumed this tick
         const session = charger.currentSession;
-        const totalDuration = (session.energyNeededKWh / this.config.chargerPowerKW) * 4; // continuous duration in ticks
+        const totalDuration = (session.energyNeededKWh / this.config.chargerPowerKW) * 4; 
         const fullTicks = Math.floor(totalDuration);
         const remainingFraction = totalDuration - fullTicks;
-        const energyPerFullTick = this.config.chargerPowerKW * 0.25; // 0.25 h = 15 min
+        const energyPerFullTick = this.config.chargerPowerKW * 0.25; 
         
         const ticksRemaining = session.departureTick - tick;
         

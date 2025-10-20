@@ -79,7 +79,6 @@ export function tickToTimestamp(tick: number): string {
 export function validateConfig(config: SimulationConfig): ValidationError[] {
   const errors: ValidationError[] = [];
 
-  // Validate numChargers
   if (!Number.isInteger(config.numChargers)) {
     errors.push({
       field: 'numChargers',
@@ -94,7 +93,6 @@ export function validateConfig(config: SimulationConfig): ValidationError[] {
     });
   }
 
-  // Validate chargerPowerKW
   if (config.chargerPowerKW < MIN_CHARGER_POWER || config.chargerPowerKW > MAX_CHARGER_POWER) {
     errors.push({
       field: 'chargerPowerKW',
@@ -103,7 +101,6 @@ export function validateConfig(config: SimulationConfig): ValidationError[] {
     });
   }
 
-  // Validate carEfficiencyKWhPer100Km
   if (config.carEfficiencyKWhPer100Km < MIN_CAR_EFFICIENCY || config.carEfficiencyKWhPer100Km > MAX_CAR_EFFICIENCY) {
     errors.push({
       field: 'carEfficiencyKWhPer100Km',
@@ -112,7 +109,6 @@ export function validateConfig(config: SimulationConfig): ValidationError[] {
     });
   }
 
-  // Validate arrivalMultiplier
   if (config.arrivalMultiplier < MIN_ARRIVAL_MULTIPLIER || config.arrivalMultiplier > MAX_ARRIVAL_MULTIPLIER) {
     errors.push({
       field: 'arrivalMultiplier',
@@ -135,10 +131,10 @@ export function hashConfig(config: SimulationConfig): string {
   for (let i = 0; i < str.length; i++) {
     const char = str.charCodeAt(i);
     hash = ((hash << 5) - hash) + char;
-    hash = hash & hash; // Convert to 32-bit integer
+    hash = hash & hash; 
   }
   
-  return hash.toString(36); // Base-36 encoding (shorter string)
+  return hash.toString(36); 
 }
 
 /**

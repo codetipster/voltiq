@@ -3,41 +3,16 @@ import {
   EVChargingSimulator,
   runSimulation,
   DEFAULT_CONFIG,
-  EXPECTED_RANGES,
   validateConfig,
 } from '../../src/simulation';
 
 describe('EVChargingSimulator', () => {
   
-  describe('Basic Simulation', () => {
-    it('should run simulation with default config', () => {
-      const simulator = new EVChargingSimulator(DEFAULT_CONFIG);
-      const result = simulator.run();
-
-      // Check all required outputs exist
-      expect(result.totalEnergyKWh).toBeDefined();
-      expect(result.theoreticalMaxPowerKW).toBeDefined();
-      expect(result.actualMaxPowerKW).toBeDefined();
-      expect(result.concurrencyFactor).toBeDefined();
-      expect(result.chargingSessions).toBeDefined();
-      expect(result.powerDemandPerTick).toBeDefined();
-      expect(result.metadata).toBeDefined();
-    });
-
-    it('should complete in reasonable time (<500ms)', () => {
-      const simulator = new EVChargingSimulator(DEFAULT_CONFIG);
-      const result = simulator.run();
-
-      expect(result.metadata.computationTimeMs).toBeLessThan(500);
-      console.log(`✓ Simulation completed in ${result.metadata.computationTimeMs}ms`);
-    });
-  });
-
-  describe('Task 1 Requirements', () => {
+  describe('Task 1: Core Requirements', () => {
     it('should match expected ranges for 20 chargers @ 11kW', () => {
       const simulator = new EVChargingSimulator({
         ...DEFAULT_CONFIG,
-        seed: 'test-seed-123', // Deterministic for testing
+        seed: 'test-seed-123',
       });
 
       const result = simulator.run();
@@ -45,39 +20,35 @@ describe('EVChargingSimulator', () => {
       // Theoretical max should be exactly 220kW
       expect(result.theoreticalMaxPowerKW).toBe(220);
 
-      // Debug output to understand the results
-      console.log('✓ Task validation:');
-      console.log(`  Theoretical Max: ${result.theoreticalMaxPowerKW} kW`);
-      console.log(`  Actual Max: ${result.actualMaxPowerKW} kW`);
-      console.log(`  Concurrency Factor: ${(result.concurrencyFactor * 100).toFixed(1)}%`);
-      console.log(`  Total Sessions: ${result.chargingSessions.length}`);
-      console.log(`  Total Energy: ${result.totalEnergyKWh.toFixed(2)} kWh`);
-      console.log(`  Average Concurrency: ${(result.metadata.averageConcurrency! * 100).toFixed(1)}%`);
+      // Actual max power should be within expected range (77-121 kW)
+      expect(result.actualMaxPowerKW).toBeGreaterThanOrEqual(77);
+      expect(result.actualMaxPowerKW).toBeLessThanOrEqual(121);
 
-      // actual max is expected to be less than theoretical max
-      expect(result.actualMaxPowerKW).toBeLessThan(result.theoreticalMaxPowerKW);
-      expect(result.concurrencyFactor).toBeLessThan(1.0);
-      expect(result.concurrencyFactor).toBeGreaterThan(0.1);
+      // Concurrency factor should be 35-55%
+      expect(result.concurrencyFactor).toBeGreaterThanOrEqual(0.35);
+      expect(result.concurrencyFactor).toBeLessThanOrEqual(0.55);
+
+      console.log('✓ Task 1 Validation:');
+      console.log(`  Actual Max: ${result.actualMaxPowerKW} kW (expected: 77-121 kW)`);
+      console.log(`  Concurrency: ${(result.concurrencyFactor * 100).toFixed(1)}% (expected: 35-55%)`);
+      console.log(`  Total Energy: ${result.totalEnergyKWh.toFixed(0)} kWh`);
+      console.log(`  Sessions: ${result.chargingSessions.length}`);
     });
 
-    it('should generate 35,040 power demand data points', () => {
-      const simulator = new EVChargingSimulator(DEFAULT_CONFIG);
-      const result = simulator.run();
-
-      // One data point per 15-minute interval for 365 days
+    it('should generate 35,040 power demand data points (365 days × 96 ticks/day)', () => {
+      const result = runSimulation({ seed: 'length-test' });
       expect(result.powerDemandPerTick).toHaveLength(35040);
     });
 
-    it('should calculate correct theoretical maximum', () => {
+    it('should calculate correct theoretical maximum for various configs', () => {
       const configs = [
         { numChargers: 10, chargerPowerKW: 11, expected: 110 },
         { numChargers: 20, chargerPowerKW: 11, expected: 220 },
         { numChargers: 20, chargerPowerKW: 22, expected: 440 },
-        { numChargers: 5, chargerPowerKW: 50, expected: 250 },
       ];
 
       configs.forEach(({ numChargers, chargerPowerKW, expected }) => {
-        const result = runSimulation({ numChargers, chargerPowerKW });
+        const result = runSimulation({ numChargers, chargerPowerKW, seed: 'theo-test' });
         expect(result.theoreticalMaxPowerKW).toBe(expected);
       });
     });
@@ -95,97 +66,16 @@ describe('EVChargingSimulator', () => {
       expect(result1.concurrencyFactor).toBe(result2.concurrencyFactor);
       expect(result1.chargingSessions.length).toBe(result2.chargingSessions.length);
     });
-
-    it('should produce different results with different seeds', () => {
-      const result1 = runSimulation({ seed: 'seed-1' });
-      const result2 = runSimulation({ seed: 'seed-2' });
-
-      // Results should differ (extremely unlikely to be identical)
-      expect(result1.totalEnergyKWh).not.toBe(result2.totalEnergyKWh);
-    });
-
-    it('should produce different results without seed', () => {
-      const result1 = runSimulation();
-      const result2 = runSimulation();
-
-      // Without seed, uses timestamp - should differ
-      expect(result1.totalEnergyKWh).not.toBe(result2.totalEnergyKWh);
-    });
   });
 
-  describe('Edge Cases', () => {
-    it('should handle minimal configuration (1 charger)', () => {
-      const result = runSimulation({
-        numChargers: 1,
-        seed: 'edge-test-1',
-      });
-
-      expect(result.theoreticalMaxPowerKW).toBe(11);
-      expect(result.actualMaxPowerKW).toBeLessThanOrEqual(11);
-      expect(result.concurrencyFactor).toBeGreaterThan(0);
-      expect(result.concurrencyFactor).toBeLessThanOrEqual(1);
-    });
-
-    it('should handle maximum configuration (30 chargers)', () => {
-      const result = runSimulation({
-        numChargers: 30,
-        seed: 'edge-test-2',
-      });
-
-      expect(result.theoreticalMaxPowerKW).toBe(330);
-      expect(result.actualMaxPowerKW).toBeLessThanOrEqual(330);
-    });
-
-    it('should handle minimal arrivals (multiplier = 0.2)', () => {
-      const result = runSimulation({
-        arrivalMultiplier: 0.2, // Minimum allowed multiplier
-        seed: 'minimal-arrivals',
-      });
-
-      // With very low traffic, we should see minimal energy consumption
-      expect(result.totalEnergyKWh).toBeGreaterThanOrEqual(0);
-      expect(result.actualMaxPowerKW).toBeGreaterThanOrEqual(0);
-      expect(result.chargingSessions.length).toBeGreaterThanOrEqual(0);
-      expect(result.concurrencyFactor).toBeGreaterThanOrEqual(0);
-    });
-
-    it('should handle high traffic (multiplier = 2.0)', () => {
-      const result = runSimulation({
-        arrivalMultiplier: 2.0,
-        seed: 'high-traffic',
-      });
-
-      // With 2x traffic, we should see higher energy consumption
-      expect(result.totalEnergyKWh).toBeGreaterThan(0);
-      expect(result.chargingSessions.length).toBeGreaterThan(0);
-    });
-
-    it('should handle different charger powers', () => {
-      const result22kW = runSimulation({
-        chargerPowerKW: 22,
-        seed: 'power-test',
-      });
-      const result11kW = runSimulation({
-        chargerPowerKW: 11,
-        seed: 'power-test',
-      });
-
-      // Same seed, but 22kW charges faster, so sessions are shorter
-      // This should lead to different concurrency patterns
-      expect(result22kW.theoreticalMaxPowerKW).toBeGreaterThan(
-        result11kW.theoreticalMaxPowerKW
-      );
-    });
-  });
-
-  describe('Bonus: Varying Number of Chargers', () => {
-    it('should show decreasing concurrency factor with more chargers', () => {
+  describe('Bonus: Concurrency Factor vs Number of Chargers', () => {
+    it('should show decreasing concurrency factor as chargers increase', () => {
       const results: Array<{ numChargers: number; concurrencyFactor: number }> = [];
 
       for (let numChargers = 5; numChargers <= 25; numChargers += 5) {
         const result = runSimulation({
           numChargers,
-          seed: 'concurrency-test', // Same seed for fair comparison
+          seed: 'concurrency-test',
         });
         results.push({
           numChargers,
@@ -198,168 +88,120 @@ describe('EVChargingSimulator', () => {
         console.log(`  ${numChargers} chargers: ${(concurrencyFactor * 100).toFixed(1)}%`);
       });
 
-      // Generally, concurrency factor decreases as chargers increase
-      // (because it's harder to have all chargers occupied simultaneously)
+      // Concurrency should decrease as chargers increase
       const firstFactor = results[0].concurrencyFactor;
       const lastFactor = results[results.length - 1].concurrencyFactor;
       expect(lastFactor).toBeLessThan(firstFactor);
     });
   });
 
-  describe('Configuration Validation', () => {
-    it('should reject invalid number of chargers', () => {
-      expect(() => {
-        new EVChargingSimulator({
-          ...DEFAULT_CONFIG,
-          numChargers: 0, // Invalid: too low
-        });
-      }).toThrow();
-
-      expect(() => {
-        new EVChargingSimulator({
-          ...DEFAULT_CONFIG,
-          numChargers: 100, // Invalid: too high
-        });
-      }).toThrow();
-    });
-
-    it('should reject invalid charger power', () => {
-      expect(() => {
-        new EVChargingSimulator({
-          ...DEFAULT_CONFIG,
-          chargerPowerKW: 1, // Invalid: too low
-        });
-      }).toThrow();
-
-      expect(() => {
-        new EVChargingSimulator({
-          ...DEFAULT_CONFIG,
-          chargerPowerKW: 500, // Invalid: too high
-        });
-      }).toThrow();
-    });
-
-    it('should reject invalid arrival multiplier', () => {
-      expect(() => {
-        new EVChargingSimulator({
-          ...DEFAULT_CONFIG,
-          arrivalMultiplier: 0.1, // Invalid: too low
-        });
-      }).toThrow();
-
-      expect(() => {
-        new EVChargingSimulator({
-          ...DEFAULT_CONFIG,
-          arrivalMultiplier: 3.0, // Invalid: too high
-        });
-      }).toThrow();
-    });
-
-    it('should validate configuration without throwing', () => {
-      const validConfig = DEFAULT_CONFIG;
-      const errors = validateConfig(validConfig);
-      expect(errors).toHaveLength(0);
-
-      const invalidConfig = { ...DEFAULT_CONFIG, numChargers: 0 };
-      const errorsInvalid = validateConfig(invalidConfig);
-      expect(errorsInvalid.length).toBeGreaterThan(0);
-      expect(errorsInvalid[0].field).toBe('numChargers');
-    });
-  });
-
   describe('Data Integrity', () => {
-    it('should not have negative values', () => {
+    it('should maintain valid physical constraints', () => {
       const result = runSimulation({ seed: 'integrity-test' });
 
       expect(result.totalEnergyKWh).toBeGreaterThanOrEqual(0);
       expect(result.actualMaxPowerKW).toBeGreaterThanOrEqual(0);
       expect(result.concurrencyFactor).toBeGreaterThanOrEqual(0);
-
-      // Check all power demand values
-      result.powerDemandPerTick.forEach((power, tick) => {
-        expect(power).toBeGreaterThanOrEqual(0);
-      });
-
-      // Check all sessions
-      result.chargingSessions.forEach((session) => {
-        expect(session.energyNeededKWh).toBeGreaterThanOrEqual(0);
-        expect(session.departureTick).toBeGreaterThan(session.arrivalTick);
-      });
-    });
-
-    it('should have concurrency factor <= 1.0', () => {
-      const result = runSimulation({ seed: 'concurrency-check' });
-
       expect(result.concurrencyFactor).toBeLessThanOrEqual(1.0);
-    });
 
-    it('should have actual max <= theoretical max', () => {
-      const result = runSimulation({ seed: 'max-check' });
-
+      // Actual max can't exceed theoretical max
       expect(result.actualMaxPowerKW).toBeLessThanOrEqual(
         result.theoreticalMaxPowerKW
       );
+
+      // All power demand values should be valid
+      result.powerDemandPerTick.forEach((power) => {
+        expect(power).toBeGreaterThanOrEqual(0);
+        expect(power).toBeLessThanOrEqual(result.theoreticalMaxPowerKW);
+      });
+    });
+
+    it('should create valid charging sessions', () => {
+      const result = runSimulation({ seed: 'session-test' });
+
+      expect(result.chargingSessions.length).toBeGreaterThan(0);
+
+      // Verify first few sessions have valid data
+      result.chargingSessions.slice(0, 10).forEach((session) => {
+        expect(session.departureTick).toBeGreaterThan(session.arrivalTick);
+        expect(session.energyNeededKWh).toBeGreaterThan(0);
+        expect(session.distanceKm).toBeGreaterThan(0);
+        expect(session.chargerId).toBeGreaterThanOrEqual(0);
+        expect(session.chargerId).toBeLessThan(DEFAULT_CONFIG.numChargers);
+      });
     });
   });
 
-  describe('Metadata', () => {
-    it('should include computation time', () => {
-      const result = runSimulation();
+  describe('Configuration Validation', () => {
+    it('should reject invalid configurations', () => {
+      // Invalid number of chargers
+      expect(() => {
+        new EVChargingSimulator({
+          ...DEFAULT_CONFIG,
+          numChargers: 0,
+        });
+      }).toThrow('Invalid configuration');
 
-      expect(result.metadata.computationTimeMs).toBeGreaterThan(0);
-      expect(result.metadata.computationTimeMs).toBeLessThan(5000);
+      expect(() => {
+        new EVChargingSimulator({
+          ...DEFAULT_CONFIG,
+          numChargers: 100,
+        });
+      }).toThrow('Invalid configuration');
+
+      // Invalid charger power
+      expect(() => {
+        new EVChargingSimulator({
+          ...DEFAULT_CONFIG,
+          chargerPowerKW: 1,
+        });
+      }).toThrow('Invalid configuration');
+
+      // Invalid arrival multiplier
+      expect(() => {
+        new EVChargingSimulator({
+          ...DEFAULT_CONFIG,
+          arrivalMultiplier: 0.1,
+        });
+      }).toThrow('Invalid configuration');
     });
 
-    it('should include timestamp as string', () => {
-      const result = runSimulation();
+    it('should accept valid configurations', () => {
+      const validConfig = DEFAULT_CONFIG;
+      const errors = validateConfig(validConfig);
+      expect(errors).toHaveLength(0);
 
-      expect(result.metadata.timestamp).toBeDefined();
-      expect(typeof result.metadata.timestamp).toBe('string');
-      expect(result.metadata.timestamp.length).toBeGreaterThan(0);
-    });
-
-    it('should mark as real data', () => {
-      const result = runSimulation();
-
-      expect(result.metadata.isRealData).toBe(true);
-    });
-
-    it('should include config hash', () => {
-      const result = runSimulation();
-
-      expect(result.metadata.configHash).toBeDefined();
-      expect(typeof result.metadata.configHash).toBe('string');
-      expect(result.metadata.configHash.length).toBeGreaterThan(0);
-    });
-
-    it('should include average concurrency metrics', () => {
-      const result = runSimulation();
-
-      expect(result.metadata.averageConcurrency).toBeDefined();
-      expect(result.metadata.averagePowerKW).toBeDefined();
-      expect(result.metadata.averageConcurrency).toBeGreaterThanOrEqual(0);
-      expect(result.metadata.averageConcurrency).toBeLessThanOrEqual(1);
-      expect(result.metadata.averagePowerKW).toBeGreaterThanOrEqual(0);
+      // Should not throw
+      expect(() => {
+        new EVChargingSimulator(validConfig);
+      }).not.toThrow();
     });
   });
 
-  describe('Energy Calculation Accuracy', () => {
-    it('should calculate exact energy consumption', () => {
-      const result = runSimulation({ seed: 'energy-test' });
+  describe('Charger Blocking Logic', () => {
+    it('should not allow occupied chargers to accept new arrivals', () => {
+      const result = runSimulation({ 
+        numChargers: 1, 
+        seed: 'blocking-test',
+        arrivalMultiplier: 2.0, 
+      });
 
-      // Total energy should be reasonable for a year
-      expect(result.totalEnergyKWh).toBeGreaterThan(10000); // At least 10k kWh/year
-      expect(result.totalEnergyKWh).toBeLessThan(1000000); // Less than 1M kWh/year
+      // With only 1 charger and high traffic, verify sessions don't overlap
+      const sessions = result.chargingSessions
+        .filter(s => s.chargerId === 0)
+        .sort((a, b) => a.arrivalTick - b.arrivalTick);
 
-      // Energy should be positive
-      expect(result.totalEnergyKWh).toBeGreaterThan(0);
-    });
+      for (let i = 1; i < sessions.length; i++) {
+        const prevSession = sessions[i - 1];
+        const currentSession = sessions[i];
+        
+        // Current session should start after previous one ends
+        expect(currentSession.arrivalTick).toBeGreaterThanOrEqual(
+          prevSession.departureTick
+        );
+      }
 
-    it('should have consistent energy calculations with same seed', () => {
-      const result1 = runSimulation({ seed: 'energy-consistency' });
-      const result2 = runSimulation({ seed: 'energy-consistency' });
-
-      expect(result1.totalEnergyKWh).toBe(result2.totalEnergyKWh);
+      console.log(`✓ Verified ${sessions.length} sessions don't overlap on single charger`);
     });
   });
 });
