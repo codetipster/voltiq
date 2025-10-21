@@ -50,7 +50,7 @@ export function ConfigurationForm({ config, onSave, onCancel, isLoading }: Confi
   };
 
   return (
-    <Card className="w-full">
+    <Card className="w-full max-w-3xl mx-auto">
       <CardHeader>
         <CardTitle>{config ? 'Edit Configuration' : 'New Configuration'}</CardTitle>
         <CardDescription>

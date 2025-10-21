@@ -65,7 +65,7 @@ export const TabsTrigger = ({ value: triggerValue, children, className = '', ...
       role="tab"
       aria-selected={isActive}
       onClick={() => onValueChange(triggerValue)}
-      className={`inline-flex items-center justify-center whitespace-nowrap px-4 py-2 rounded-md transition-all focus:outline-none focus:ring-2 focus:ring-[var(--brand-coral)] focus:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 ${
+      className={`flex-1 flex items-center justify-center whitespace-nowrap px-4 py-2 rounded-md transition-all focus:outline-none focus:ring-2 focus:ring-[var(--brand-coral)] focus:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 ${
         isActive
           ? 'bg-background shadow-sm'
           : 'text-muted-foreground hover:bg-background/50'
