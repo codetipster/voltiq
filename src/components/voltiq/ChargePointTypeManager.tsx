@@ -63,7 +63,7 @@ export function ChargePointTypeManager({ chargePointTypes, onChange }: ChargePoi
                   key={type.id}
                   className="flex items-center gap-3 p-3 rounded-lg border border-border bg-muted/50"
                 >
-                  <div className="flex-1 grid grid-cols-2 gap-3">
+                  <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
                       <Label htmlFor={`power-${type.id}`} style={{ fontSize: '0.75rem' }}>
                         Power (kW)
@@ -117,7 +117,7 @@ export function ChargePointTypeManager({ chargePointTypes, onChange }: ChargePoi
         <div className="space-y-2">
           <Label>Add New Charge Point Type</Label>
           <div className="flex items-end gap-3">
-            <div className="flex-1 grid grid-cols-2 gap-3">
+            <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <Label htmlFor="new-power" style={{ fontSize: '0.75rem' }}>
                   Power (kW)

@@ -19,10 +19,19 @@
 - [Project Structure](#project-structure)
 - [Quick Start](#quick-start)
 - [Testing](#testing)
+- [Task Breakdown](#task-breakdown)
+  - [Task 1: Simulation Logic](#task-1-simulation-logic)
+  - [Assumptions and Reasoning](#assumptions-and-reasoning)
+  - [Task 2a: Frontend UI](#task-2a-frontend-ui)
+- [Design Philosophy](#design-philosophy)
+- [Screenshots](#screenshots)
+- [Running the simulation locally](#running-the-simulation-locally)
+- [Author](#author)
+- [Acknowledgments](#acknowledgments)
 
 ---
 
-## 🎯 Overview
+## 🎯 Overview {#overview}
 
 This application simulates electric vehicle charging station usage patterns over a full year to help business owners make informed decisions about EV infrastructure investments. By modeling realistic arrival patterns and charging demands, it calculates:
 
@@ -46,7 +55,7 @@ This project implements:
 
 ---
 
-## ✨ Features
+## ✨ Features {#features}
 
 ### Task 1: Simulation Engine
 
@@ -64,7 +73,7 @@ This project implements:
 
 ---
 
-## 🛠️ Tech Stack
+## 🛠️ Tech Stack {#tech-stack}
 
 ### Core
 
@@ -92,7 +101,7 @@ This project implements:
 
 ---
 
-## 📁 Project Structure
+## 📁 Project Structure {#project-structure}
 
 ```
 voltiq/
@@ -160,7 +169,7 @@ voltiq/
 
 ---
 
-## 🚀 Quick Start - Running Voltiq
+## 🚀 Quick Start - Running Voltiq {#quick-start}
 
 ### Prerequisites
 
@@ -184,7 +193,7 @@ npm run dev
 
 That's it! The application UI should now be running. 🎉
 
-### Running the simulation locally (Optional)
+### Running the simulation locally (Optional) {#running-the-simulation-locally}
 
 You can run the simulation engine directly from the command line to test different configurations:
 
@@ -203,6 +212,7 @@ npm run simulate numChargers=15 chargerPowerKW=50 arrivalMultiplier=120 carEffic
 ```
 
 **Available parameters:**
+
 - `numChargers` - Number of charge points (1-30)
 - `chargerPowerKW` - Power per charger in kW (3.7-350)
 - `arrivalMultiplier` - Arrival rate multiplier (0.2-2.0)
@@ -211,7 +221,7 @@ npm run simulate numChargers=15 chargerPowerKW=50 arrivalMultiplier=120 carEffic
 
 ---
 
-## 🧪 Testing
+## 🧪 Testing {#testing}
 
 ### Running Tests
 
@@ -235,17 +245,142 @@ npm test engine.test.ts
 - ✅ Deterministic behavior (seeded RNG)
 - ✅ Performance benchmarks
 
-## 📚 Task Breakdown
+## 📚 Task Breakdown {#task-breakdown}
 
-### ✅ Task 1: Simulation Logic
+### ✅ Task 1: Simulation Logic {#task-1-simulation-logic}
 
 **Location**: `src/simulation/`
 
-### ✅ Task 2a: Frontend UI
+## 🔬 Assumptions and Reasoning {#assumptions-and-reasoning}
+
+### Critical Interpretation: Arrival Probabilities
+
+**The Challenge**
+The task provides arrival probabilities (e.g., 10.38% during 4-7 PM) but doesn't explicitly state whether this represents:
+- Option A: Probability of any arrival at the entire site per hour
+- Option B: Probability of arrival per charger per hour
+
+**My Interpretation: Per-Charger Probabilities**
+After initial implementation and calibration, I interpreted these as per-charger, per-hour probabilities. Here's why:
+
+- **Scalability Logic**: If probabilities were site-wide, adding more chargers wouldn't increase utilization proportionally - which doesn't match real-world behavior. In reality, more parking spaces → more potential customers.
+- **Target Metrics Alignment**: Using per-charger interpretation with the given probabilities yields results in the expected range:
+  - Actual max power: 77-121 kW ✓
+  - Concurrency factor: 35-55% ✓
+- **Real-World Analogy**: Each parking space has its own independent chance of being occupied, similar to how each checkout lane in a store has its own customer arrival rate.
+
+**Implementation Details**
+For each 15-minute tick:
+```
+adjustedProbability = (hourlyProbability / 4) * arrivalMultiplier
+```
+- **Division by 4**: Converts hourly probability to per-tick (15-min) probability
+- **Arrival multiplier**: Allows simulating busier/quieter scenarios (default: 1.0)
+
+Each charger independently checks for arrivals every tick, creating realistic concurrent usage patterns.
+
+### Assumption: Charging Demand Distribution
+
+**Interpretation of "None" Category**
+The charging demand table shows 34.31% as "None (doesn't charge)". I interpret this as:
+- EV arrives at the location
+- Driver parks but decides not to plug in (already has enough charge, just stopping briefly, etc.)
+- Charger remains available for next arrival
+
+**Why this matters**: These non-charging arrivals don't block chargers, allowing realistic turnover rates.
+
+**Energy Calculation**
+For charging sessions:
+```
+energyNeeded (kWh) = (distanceKm / 100) × carEfficiency (kWh/100km)
+```
+Default: 18 kWh/100km (typical for modern EVs like Tesla Model 3, VW ID.4)
+
+### Assumption: Charging Duration & Departure
+
+**Duration Calculation**
+```
+chargingTime (hours) = energyNeeded / chargerPower
+durationTicks = ceil(chargingTime × 4)
+```
+**Key decision**: Round up to ensure full energy delivery. A car needing 10.2 kWh will occupy the charger for 3 ticks (45 min) rather than leaving partially charged.
+
+**Immediate Departure**
+Assumption: EVs depart immediately upon charging completion.
+**Rationale**:
+- Simplifies simulation (no idle/overstay time)
+- Represents ideal scenario (e.g., parking enforcement, time limits, or courteous drivers)
+- Maximizes charger availability
+
+*Real-world consideration*: In practice, some drivers overstay. This could be modeled with an additional "dwell time" parameter in future iterations.
+
+### Assumption: Charger Availability Logic
+
+**Blocking Mechanism**
+A charger is blocked from tick t through tick t + duration - 1.
+**Example**:
+- Car arrives at tick 100, needs 4 ticks of charging
+- Charger occupied: ticks 100, 101, 102, 103
+- Charger available again: tick 104
+
+**Arrivals at Occupied Chargers**
+If an arrival is generated for an occupied charger, that arrival is lost (car finds parking elsewhere or leaves).
+**Why not queue?** The task describes physical parking spaces with chargers - there's nowhere to queue. This matches real-world behavior at destination charging locations.
+
+### Assumption: Power Demand Calculation
+
+**Instantaneous Power**
+During each tick, power demand is calculated as:
+```
+totalPower = count(occupiedChargers) × chargerPower
+```
+**Simplification**: Assumes constant power delivery throughout the charging session (no tapering at high SOC, no power ramping).
+
+**Energy Accounting**
+Energy consumed per tick accounts for partial final ticks:
+- Most ticks: `chargerPower × 0.25 hours` (full 15-min interval)
+- Final tick: May be fractional if charging completes mid-interval
+
+This ensures total energy consumed exactly matches sum of all session demands.
+
+### Assumption: Temporal Distribution
+
+**No Daylight Saving Time (Default)**
+By default, the simulation uses a simple tick-to-hour mapping:
+```
+hour = floor((tick % 96) / 4)
+```
+**Rationale**:
+- Simplifies implementation
+- DST shifts affect arrival patterns by ±1 hour twice per year - minimal impact on annual metrics
+- Optional `useDST` parameter available for future enhancement
+
+**Uniform 15-Minute Intervals**
+All arrivals, departures, and measurements happen on 15-minute boundaries.
+**Trade-off**:
+- ✓ Computationally efficient (35,040 ticks vs. continuous simulation)
+- ✓ Matches typical smart meter resolution
+- ✗ Can't capture sub-15-minute dynamics
+
+### Assumption: Stochastic Behavior
+
+**Seeded Randomness**
+The simulation uses seedable pseudo-random number generation for:
+- ✓ Reproducible results (same seed → identical output)
+- ✓ Debugging and testing
+- ✓ Consistent comparisons across parameter variations
+
+**Independent Events**
+Each charger's arrival probability is evaluated independently every tick. This means:
+- Multiple arrivals can happen simultaneously at different chargers
+- No artificial smoothing or correlation between chargers
+- Produces realistic "clumpy" behavior (sometimes many cars, sometimes none)
+
+### ✅ Task 2a: Frontend UI {#task-2a-frontend-ui}
 
 **Location**: `src/components/`
 
-## 🎨 Design Philosophy
+## 🎨 Design Philosophy {#design-philosophy}
 
 ### Simplicity & Clarity
 
@@ -274,7 +409,7 @@ npm test engine.test.ts
 
 ---
 
-## 📸 Screenshots
+## 📸 Screenshots {#screenshots}
 
 ### Desktop View
 
@@ -286,14 +421,14 @@ npm test engine.test.ts
 
 ---
 
-## 👤 Author
+## 👤 Author {#author}
 
 **Samuel** - Junior Mobile Engineer Applicant  
 (Technical Assessment for Reonic GmbH)
 
 ---
 
-## 🙏 Acknowledgments
+## 🙏 Acknowledgments {#acknowledgments}
 
 - Reonic team for the interesting problem statement
 - The React and TypeScript communities for excellent tooling
