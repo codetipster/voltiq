@@ -1,6 +1,6 @@
 # ⚡ VoltiQ
 
-> A modular toolkit for EV charging calculations, simulation, and energy analytics — built for engineers and researchers.
+> A modular toolkit for EV charging calculations, simulation, and energy analytics.
 
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.5-3178C6?style=flat&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 [![React](https://img.shields.io/badge/React-18.3-61DAFB?style=flat&logo=react&logoColor=black)](https://reactjs.org/)
@@ -135,7 +135,8 @@ voltiq/
 │   │   └── globals.css          # Global styles & Tailwind imports
 │   │
 │   ├── App.tsx                  # Root component with main UI
-│   └── main.tsx                 # Application entry point
+│   ├── main.tsx                 # Application entry point
+│   └── cli.ts                   # Command-line simulation runner
 │
 ├── tests/
 │   └── simulation/              # Task 1 unit tests
@@ -183,7 +184,30 @@ npm run dev
 
 That's it! The application UI should now be running. 🎉
 
-### Running the simulation locally(Optional)
+### Running the simulation locally (Optional)
+
+You can run the simulation engine directly from the command line to test different configurations:
+
+```bash
+# Run with default configuration (20 chargers, 11kW, 100% arrival rate)
+npm run simulate
+
+# Run with custom parameters
+npm run simulate numChargers=10 chargerPowerKW=22 arrivalMultiplier=150
+
+# Run with different car efficiency
+npm run simulate carEfficiencyKWhPer100Km=20
+
+# Combine multiple parameters
+npm run simulate numChargers=15 chargerPowerKW=50 arrivalMultiplier=120 carEfficiencyKWhPer100Km=16
+```
+
+**Available parameters:**
+- `numChargers` - Number of charge points (1-30)
+- `chargerPowerKW` - Power per charger in kW (3.7-350)
+- `arrivalMultiplier` - Arrival rate multiplier (0.2-2.0)
+- `carEfficiencyKWhPer100Km` - Car efficiency (10-30 kWh/100km)
+- `seed` - Random seed for reproducible results (optional)
 
 ---
 
