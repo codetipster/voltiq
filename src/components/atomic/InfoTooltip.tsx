@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Info } from 'lucide-react';
 
-interface InfoTooltipProps {
+export interface InfoTooltipProps {
   content: string;
   className?: string;
 }
