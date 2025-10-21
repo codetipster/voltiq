@@ -257,6 +257,7 @@ npm test engine.test.ts
 
 **The Challenge**
 The task provides arrival probabilities (e.g., 10.38% during 4-7 PM) but doesn't explicitly state whether this represents:
+
 - Option A: Probability of any arrival at the entire site per hour
 - Option B: Probability of arrival per charger per hour
 
@@ -271,9 +272,11 @@ After initial implementation and calibration, I interpreted these as per-charger
 
 **Implementation Details**
 For each 15-minute tick:
+
 ```
 adjustedProbability = (hourlyProbability / 4) * arrivalMultiplier
 ```
+
 - **Division by 4**: Converts hourly probability to per-tick (15-min) probability
 - **Arrival multiplier**: Allows simulating busier/quieter scenarios (default: 1.0)
 
@@ -283,6 +286,7 @@ Each charger independently checks for arrivals every tick, creating realistic co
 
 **Interpretation of "None" Category**
 The charging demand table shows 34.31% as "None (doesn't charge)". I interpret this as:
+
 - EV arrives at the location
 - Driver parks but decides not to plug in (already has enough charge, just stopping briefly, etc.)
 - Charger remains available for next arrival
@@ -291,34 +295,40 @@ The charging demand table shows 34.31% as "None (doesn't charge)". I interpret t
 
 **Energy Calculation**
 For charging sessions:
+
 ```
 energyNeeded (kWh) = (distanceKm / 100) × carEfficiency (kWh/100km)
 ```
+
 Default: 18 kWh/100km (typical for modern EVs like Tesla Model 3, VW ID.4)
 
 ### Assumption: Charging Duration & Departure
 
 **Duration Calculation**
+
 ```
 chargingTime (hours) = energyNeeded / chargerPower
 durationTicks = ceil(chargingTime × 4)
 ```
+
 **Key decision**: Round up to ensure full energy delivery. A car needing 10.2 kWh will occupy the charger for 3 ticks (45 min) rather than leaving partially charged.
 
 **Immediate Departure**
 Assumption: EVs depart immediately upon charging completion.
 **Rationale**:
+
 - Simplifies simulation (no idle/overstay time)
 - Represents ideal scenario (e.g., parking enforcement, time limits, or courteous drivers)
 - Maximizes charger availability
 
-*Real-world consideration*: In practice, some drivers overstay. This could be modeled with an additional "dwell time" parameter in future iterations.
+_Real-world consideration_: In practice, some drivers overstay. This could be modeled with an additional "dwell time" parameter in future iterations.
 
 ### Assumption: Charger Availability Logic
 
 **Blocking Mechanism**
 A charger is blocked from tick t through tick t + duration - 1.
 **Example**:
+
 - Car arrives at tick 100, needs 4 ticks of charging
 - Charger occupied: ticks 100, 101, 102, 103
 - Charger available again: tick 104
@@ -331,13 +341,16 @@ If an arrival is generated for an occupied charger, that arrival is lost (car fi
 
 **Instantaneous Power**
 During each tick, power demand is calculated as:
+
 ```
 totalPower = count(occupiedChargers) × chargerPower
 ```
+
 **Simplification**: Assumes constant power delivery throughout the charging session (no tapering at high SOC, no power ramping).
 
 **Energy Accounting**
 Energy consumed per tick accounts for partial final ticks:
+
 - Most ticks: `chargerPower × 0.25 hours` (full 15-min interval)
 - Final tick: May be fractional if charging completes mid-interval
 
@@ -347,10 +360,13 @@ This ensures total energy consumed exactly matches sum of all session demands.
 
 **No Daylight Saving Time (Default)**
 By default, the simulation uses a simple tick-to-hour mapping:
+
 ```
 hour = floor((tick % 96) / 4)
 ```
+
 **Rationale**:
+
 - Simplifies implementation
 - DST shifts affect arrival patterns by ±1 hour twice per year - minimal impact on annual metrics
 - Optional `useDST` parameter available for future enhancement
@@ -358,6 +374,7 @@ hour = floor((tick % 96) / 4)
 **Uniform 15-Minute Intervals**
 All arrivals, departures, and measurements happen on 15-minute boundaries.
 **Trade-off**:
+
 - ✓ Computationally efficient (35,040 ticks vs. continuous simulation)
 - ✓ Matches typical smart meter resolution
 - ✗ Can't capture sub-15-minute dynamics
@@ -366,12 +383,14 @@ All arrivals, departures, and measurements happen on 15-minute boundaries.
 
 **Seeded Randomness**
 The simulation uses seedable pseudo-random number generation for:
+
 - ✓ Reproducible results (same seed → identical output)
 - ✓ Debugging and testing
 - ✓ Consistent comparisons across parameter variations
 
 **Independent Events**
 Each charger's arrival probability is evaluated independently every tick. This means:
+
 - Multiple arrivals can happen simultaneously at different chargers
 - No artificial smoothing or correlation between chargers
 - Produces realistic "clumpy" behavior (sometimes many cars, sometimes none)

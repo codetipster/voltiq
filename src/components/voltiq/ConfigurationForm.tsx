@@ -4,6 +4,7 @@ import { Label } from '../atomic/Label';
 import { Button } from '../atomic/Button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../atomic/Card';
 import { Slider } from '../atomic/Slider';
+import { InfoTooltip } from '../atomic/InfoTooltip';
 import { ChargePointTypeManager } from './ChargePointTypeManager';
 import type { SimulationConfig, ChargePointType } from '../../types/simulation';
 
@@ -77,7 +78,10 @@ export function ConfigurationForm({ config, onSave, onCancel, isLoading }: Confi
 
           <div className="space-y-3">
             <div className="flex items-center justify-between">
-              <Label htmlFor="arrivalProbability">Arrival Probability Multiplier</Label>
+              <div className="flex items-center gap-2">
+                <Label htmlFor="arrivalProbability">Arrival Probability Multiplier</Label>
+                <InfoTooltip content="Adjusts how busy your charging location is. 100% = normal traffic, 150% = 50% busier, 50% = half the traffic. Use this to simulate peak hours or quiet periods." />
+              </div>
               <span className="text-muted-foreground">{arrivalProbability}%</span>
             </div>
             <Slider
@@ -95,7 +99,10 @@ export function ConfigurationForm({ config, onSave, onCancel, isLoading }: Confi
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="carConsumption">Car Consumption (kWh)</Label>
+            <div className="flex items-center gap-2">
+              <Label htmlFor="carConsumption">Car Consumption (kWh)</Label>
+              <InfoTooltip content="How much energy EVs use per 100km. Most modern EVs: 15-20 kWh/100km. Lower = more efficient. Default 18 kWh is typical." />
+            </div>
             <Input
               id="carConsumption"
               type="number"

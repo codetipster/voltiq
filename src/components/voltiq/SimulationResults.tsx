@@ -1,5 +1,6 @@
 import type { SimulationResult } from '../../types/simulation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../atomic/Card';
+import { InfoTooltip } from '../atomic/InfoTooltip';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { Battery, Calendar, TrendingUp, Zap, Activity } from 'lucide-react';
 import { Badge } from '../atomic/Badge';
@@ -48,7 +49,10 @@ export function SimulationResults({ result, isLoading }: SimulationResultsProps)
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle style={{ fontSize: '0.875rem' }}>Total Energy Charged</CardTitle>
+            <div className="flex items-center gap-2">
+              <CardTitle style={{ fontSize: '0.875rem' }}>Total Energy Charged</CardTitle>
+              <InfoTooltip content="Total energy delivered across all charging sessions over one year. Multiply by your electricity rate to estimate costs." />
+            </div>
             <Battery className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>

@@ -33,3 +33,6 @@ export {
 } from './AlertDialog';
 
 export { ToastProvider, toast, useToast } from './Toast';
+
+export { InfoTooltip } from './InfoTooltip';
+export type { InfoTooltipProps } from './InfoTooltip';

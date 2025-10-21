@@ -4,6 +4,7 @@ import { Button } from '../atomic/Button';
 import { Input } from '../atomic/Input';
 import { Label } from '../atomic/Label';
 import { Card, CardContent, CardHeader, CardTitle } from '../atomic/Card';
+import { InfoTooltip } from '../atomic/InfoTooltip';
 import { Plus, Trash2, Zap } from 'lucide-react';
 
 interface ChargePointTypeManagerProps {
@@ -56,7 +57,10 @@ export function ChargePointTypeManager({ chargePointTypes, onChange }: ChargePoi
         {/* Existing Types */}
         {chargePointTypes.length > 0 && (
           <div className="space-y-2">
-            <Label>Configured Charge Points</Label>
+            <div className="flex items-center gap-2">
+              <Label>Configured Charge Points</Label>
+              <InfoTooltip content="Total EV charging stations available at your location. Each charger can serve one vehicle at a time." />
+            </div>
             <div className="space-y-2">
               {chargePointTypes.map((type) => (
                 <div
