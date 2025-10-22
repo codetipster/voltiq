@@ -27,7 +27,6 @@ export const InfoTooltip: React.FC<InfoTooltipProps> = ({ content, className = '
             <div className="text-sm leading-relaxed whitespace-normal">
               {content}
             </div>
-            {/* Arrow pointing down */}
             <div className="absolute top-full left-1/2 transform -translate-x-1/2">
               <div className="w-0 h-0 border-l-4 border-r-4 border-t-4 border-l-transparent border-r-transparent" style={{ borderTopColor: '#4A5568' }}></div>
             </div>

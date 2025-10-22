@@ -20,6 +20,9 @@ export type { TabsProps, TabsListProps, TabsTriggerProps, TabsContentProps } fro
 export { Badge } from './Badge';
 export type { BadgeProps } from './Badge';
 
+export { InfoTooltip } from './InfoTooltip';
+export type { InfoTooltipProps } from './InfoTooltip';
+
 export {
   AlertDialog,
   AlertDialogTrigger,
@@ -33,6 +36,3 @@ export {
 } from './AlertDialog';
 
 export { ToastProvider, toast, useToast } from './Toast';
-
-export { InfoTooltip } from './InfoTooltip';
-export type { InfoTooltipProps } from './InfoTooltip';
